@@ -35,7 +35,6 @@ std::ostream& info = std::cout;
 std::ostream& error = std::cerr;
 std::ostream& debug = *(new std::ofstream);
 
-
 /**
  * 64-bit bitboard implementation for 2048
  *
@@ -168,8 +167,8 @@ public:
 
 	/**
 	 * add a new random tile on board, or do nothing if the board is full
-	 * 2-tile: 80%
-	 * 4-tile: 20%
+	 * 2-tile: 90%
+	 * 4-tile: 10%
 	 */
 	void popup() {
 		int space[16], num = 0;
@@ -178,7 +177,7 @@ public:
 				space[num++] = i;
 			}
 		if (num)
-			set(space[rand() % num], rand() % 5 ? 1 : 2);
+			set(space[rand() % num], rand() % 10 ? 1 : 2);
 	}
 
 	/**
@@ -465,15 +464,7 @@ public:
 	 */
 	virtual float estimate(const board& b) const {
 		// TODO
-		float value = 0;
-		size_t index;
-		for (int i = 0; i < iso_last; i++)
-		{
-			index = indexof(isomorphic[i], b);
-			value += operator[](index);
-		}
 
-		return value;
 	}
 
 	/**
@@ -481,17 +472,7 @@ public:
 	 */
 	virtual float update(const board& b, float u) {
 		// TODO
-		float value = 0;
-		u /= iso_last;
 
-		for (int i = 0; i < iso_last; i++)
-		{
-			size_t idx = indexof(isomorphic[i], b);
-    		float &w = operator[](idx);  // 參考別名，少打一次查表
-    		w += u;
-    		value += w;
-		}
-		return value;
 	}
 
 	/**
@@ -529,13 +510,6 @@ protected:
 
 	size_t indexof(const std::vector<int>& patt, const board& b) const {
 		// TODO
-		size_t index = 0;
-		for (int i = (int)patt.size() - 1; i >= 0; i--)
-		{
-			index = index << 4;
-			index += b.at(patt[i]);
-		}
-		return index;
 	}
 
 	std::string nameof(const std::vector<int>& patt) const {
@@ -707,33 +681,6 @@ public:
 		for (state* move = after; move != after + 4; move++) {
 			if (move->assign(b)) {
 				// TODO
-				int cnt_zero = 0;
-				float all_possible_value = 0;
-				board tmp = move->after_state();
-
-				for (int i = 0; i < 16; i++)
-				{
-					if (tmp.at(i) == 0)
-					{
-						cnt_zero++;
-						// 放 2 (log2=1)
-						tmp.set(i, 1);
-						all_possible_value += 0.8f * estimate(tmp);
-
-						// 放 4 (log2=2)
-						tmp.set(i, 2);
-						all_possible_value += 0.2f * estimate(tmp);
-
-						// 還原
-						tmp.set(i, 0);
-					}
-				}
-				if (cnt_zero != 0)
-				{
-					all_possible_value /= cnt_zero;
-				}
-
-				move->set_value(move->reward() + all_possible_value);
 
 				if (move->value() > best->value())
 					best = move;
@@ -761,14 +708,7 @@ public:
 	 */
 	void update_episode(std::vector<state>& path, float alpha = 0.1) const {
 		// TODO
-		float target = 0, error = 0;
-		while (!path.empty())
-		{
-			state &s = path.back();
-			path.pop_back();
-			error = target - estimate(s.before_state());
-			target = s.reward() + update(s.before_state(), alpha * error);
-		}
+
 	}
 
 	/**
@@ -797,14 +737,6 @@ public:
 			maxtile.back() = std::max(maxtile.back(), b.at(i));
 		}
 
-		// ---- 新增：CSV 準備（只開一次檔 & 寫一次表頭）----
-		static std::ofstream csv("scores.csv");     // 輸出檔：scores.csv
-		static bool wrote_header = false;
-		if (!wrote_header) {
-			csv << "episode,mean\n";            // 想畫移動平均/EMA，可再加欄位
-			wrote_header = true;
-		}
-
 		if (n % unit == 0) { // show the training process
 			if (scores.size() != size_t(unit) || maxtile.size() != size_t(unit)) {
 				error << "wrong statistic size for show statistics" << std::endl;
@@ -828,10 +760,6 @@ public:
 				info << "\t" << ((1 << t) & -2u) << "\t" << (accu * coef) << "%";
 				info << "\t(" << (stat[t] * coef) << "%)" << std::endl;
 			}
-
-			// ---- 新增：寫入 CSV（每 unit 寫一點，畫圖更順）----
-        	csv << n << "," << mean << "," << max << "\n";
-
 			scores.clear();
 			maxtile.clear();
 		}
@@ -950,7 +878,7 @@ int main(int argc, const char* argv[]) {
 	}
 
 	// store the model into file
-	tdl.save("weights.bin");
+	tdl.save("");
 
 	return 0;
 }
