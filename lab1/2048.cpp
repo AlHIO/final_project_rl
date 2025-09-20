@@ -487,7 +487,7 @@ public:
 		for (int i = 0; i < iso_last; i++)
 		{
 			size_t idx = indexof(isomorphic[i], b);
-    		float &w = operator[](idx);  // 參考別名，少打一次查表
+    		float &w = operator[](idx);  
     		w += u;
     		value += w;
 		}
@@ -707,40 +707,40 @@ public:
 		for (state* move = after; move != after + 4; move++) {
 			if (move->assign(b)) {
 				// TODO
-				int cnt_zero = 0;
-				float all_possible_value = 0;
+				int count = 0;
+				float all_V = 0;
 				board tmp = move->after_state();
 
 				for (int i = 0; i < 16; i++)
 				{
 					if (tmp.at(i) == 0)
 					{
-						cnt_zero++;
+						count++;
 						// 放 2 (log2=1)
 						tmp.set(i, 1);
-						all_possible_value += 0.8f * estimate(tmp);
+						all_V += 0.8f * estimate(tmp);
 
 						// 放 4 (log2=2)
 						tmp.set(i, 2);
-						all_possible_value += 0.2f * estimate(tmp);
+						all_V += 0.2f * estimate(tmp);
 
 						// 還原
 						tmp.set(i, 0);
 					}
 				}
-				if (cnt_zero != 0)
+				if (count != 0)
 				{
-					all_possible_value /= cnt_zero;
+					all_V /= count;
 				}
 
-				move->set_value(move->reward() + all_possible_value);
+				move->set_value(move->reward() + all_V);
 
 				if (move->value() > best->value())
 					best = move;
 			} else {
 				move->set_value(-std::numeric_limits<float>::max());
 			}
-			debug << "test " << *move;
+			//debug << "test " << *move;
 		}
 		return *best;
 	}
@@ -954,3 +954,6 @@ int main(int argc, const char* argv[]) {
 
 	return 0;
 }
+
+
+//g++ -std=c++11 -O3 -o 2048 2048.cpp
