@@ -1,6 +1,0 @@
-*           # 忽略所有檔案
-
-
-!lab1/.gitignore # 保留自己
-!lab1/2048.cpp
-!lab1/*.png
